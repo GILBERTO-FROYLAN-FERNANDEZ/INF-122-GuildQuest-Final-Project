@@ -115,25 +115,22 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
     /**
      * Instantiates a new Escort adventure.
      *
-     * @param realms       the realms
-     * @param entities     the entities
-     * @param winCondition the win condition
-     * @param players      the players
+     * @param realms    the realms
+     * @param entities  the entities
+     * @param condition the condition
+     * @param players   the players
      */
-    public EscortAdventure(List<Realm> realms, List<Entity> entities, List<WinCondition> winCondition,
-            List<User> players) {
-        super(realms, entities, winCondition, players);
-        this.players = players;
+    public EscortAdventure(List<Realm> realms,
+                           List<Entity> entities,
+                           GetToTargetXYWithPrincessCondition condition,
+                           List<User> players)
+    {
+        super(  realms,
+                entities,
+                List.of(condition),
+                players  );
+        this.condition=condition;
         gridState = new TerminalGrid(6, 6);
-        if (winCondition.get(0) instanceof GetToTargetXYWithPrincessCondition xyp){
-            condition=xyp;
-        }
-        else
-            condition=null; // temp
-        // pick a character and tools for the player: (PLACEHOLDER FOR NOW)
-        // player1 = Assassin.getInstance(new Name("assassin")); // placeholder
-        // player2 = Cleric.getInstance(new Name(players.get(1).getName())); //
-        // placeholder
     }
 
     public void play() {
@@ -177,8 +174,8 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
 
             Status status = inputToAction(input);
 
+            page.print(status.getMsg() + '\n');
             if (status.isFail()){
-                page.print(status.getMsg() + '\n');
                 continue;
             }
 
@@ -223,6 +220,9 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
         }
         else if (input.equals("r")) {
             return makeHintRequest(); // check to see if npc is nearby
+        }
+        else if (input.equals("0")) {
+            return new Status(Status.Option.SUCCESS, "skipped turn"); // check to see if npc is nearby
         }
         else
             throw new IllegalStateException("Something went wrong with input, cannot parse");
@@ -299,11 +299,7 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
 
     @Override
     public Status acceptInput() {
-        List<Move.ValidMoves> moves = currentPlayer.getMoves();
-        String moveString = TerminalGrid.toOptions(moves);
-        String moveRegex = TerminalGrid.toOptionsRegex(moves);
-        String input = page.acceptStrUntil(currentPlayer.getName() + "'s turn!\n" + moveString, moveRegex);
-        return new Status(Status.Option.SUCCESS, input);
+        return TerminalGrid.acceptPlayerInput(currentPlayer);
     }
 
     private Status attemptPlayerAttack(PlayableCharacter p, char direction) {
@@ -340,27 +336,17 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
      * @param enemy the enemy
      */
     public void enemyTurn(Entity enemy) {
-        // checks if each enemy is near the players (within 2 spaces)
-        // if so, the enemy will attack the players.
-        // The enemy can attack one player per turn
-        // but the priority is to attack the player with the NPC
-        // or the closest player.
-
-        // check if the enemy is within 2 spaces of the player with the NPC
-        // if so, attack the players
-        // else, skip the enemy's turn for now
-
         if (enemy instanceof Hostile h) {
             List<Entity> nearbyEntities = gridState.nearbyEntities(gridState.getLocation(enemy), 2);
-            Entity target = h.prioritizeAttack(nearbyEntities);
+            Amount c = h.getSimultaneousTargetCount();
+            List<Entity> targets = h.prioritizeAttack(nearbyEntities, c);
 
-            if (target == null)
+            if (targets == null || targets.isEmpty())
                 return;
-            h.attack(target);
+            for (Entity target : targets){
+                h.attack(target);
+            }
         }
-
-        // // TODO: add more concrete logic for enemy attacks (ex: prioritize an enemy
-        // who can attack many players)+
 
     }
 
@@ -371,31 +357,15 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
     }
 
     /**
-     * Update the target arr to be 1 adjacent in the direction specified.
-     *
-     * @param target    the target
-     * @param direction the direction
-     */
-    public static void moveCordInDirection(int[] target, char direction){
-        switch (direction) {
-            case 'e' -> target[1] += 1;
-            case 'w' -> target[1] -= 1;
-            case 's' -> target[0] += 1;
-            case 'n' -> target[0] -= 1;
-            default -> throw new IllegalStateException("Unexpected direction: " + direction);
-        }
-    }
-
-    /**
      * Get the coordinates for the GridCell in the cardinal direction (nswe) adjacent.
      *
-     * @param entity         the
+     * @param entity    the
      * @param direction the cardinal direction
      * @return the adjacent grid cell
      */
     public GridCell cellAdjacent(Entity entity, char direction){
         int[] target = gridState.getLocationCords(gridState.getLocation(entity));
-        moveCordInDirection(target, direction);
+        TerminalGrid.moveCordInDirection(target, direction);
         return gridState.getCell(target[0], target[1]);
     }
 
@@ -405,8 +375,6 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
     public void initializeGrid() {
         // logic to initialize the grid with entities, place the NPC to be escorted,
         // items, tresures, and enemies
-
-        // current default is: (12, 12).
         // Starting point: (0, 0) with an NPC that needs to be escorted to the
 
         // they are all placed randomly, but the distance between the starting point and
@@ -574,12 +542,11 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
      * @param args the input arguments
      */
     public static void main(String[] args) {
-        List<WinCondition> winConditions = List.of(new TimeLimitCondition(10));
 
         EscortAdventure adventure = new EscortAdventure(
                 new ArrayList<>(),
-                new ArrayList<>(),
-                winConditions,
+                defaultEntities(),
+                new GetToTargetXYWithPrincessCondition(4, 4),
                 new ArrayList<>());
 
         adventure.play();

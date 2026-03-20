@@ -72,8 +72,8 @@ public class AdventureUI {
 
         List<WinCondition> winConditions = new ArrayList<>();
 
-        winConditions.add(new GetToTargetXYWithPrincessCondition(4,4));
-        winConditions.add(new TimeLimitCondition(10));
+//        winConditions.add(new GetToTargetXYWithPrincessCondition(4,4));
+//        winConditions.add(new TimeLimitCondition(10));
 
         Realm realm = RealmFactory.createRealm(
                 "Escort Realm", "A dangerous escort mission",
@@ -82,7 +82,7 @@ public class AdventureUI {
         EscortAdventure adventure = new EscortAdventure(
                 List.of(realm),
                 EscortAdventure.defaultEntities(),
-                winConditions,
+                new GetToTargetXYWithPrincessCondition(4,4),
                 players);
 
         page.nextScreen();
