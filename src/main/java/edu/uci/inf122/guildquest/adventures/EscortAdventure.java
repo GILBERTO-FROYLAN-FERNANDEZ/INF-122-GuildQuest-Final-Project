@@ -80,15 +80,13 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
     // save/serialize
     private final TerminalGrid gridState;
     private final GetToTargetXYWithPrincessCondition condition;
-    private PlayableCharacter player1;
-    private PlayableCharacter player2;
     private List<Entity> enemies;
     private List<Entity> chests;
     private List<Entity> items;
     private List<Entity> npcs;
     private final static Page page = Page.getPage();
     private PlayableCharacter currentPlayer;
-    private List<User> players;
+    private List<PlayableCharacter> playableCharacters;
 
     public static List<Entity> defaultEntities() {
         Item item1 = ItemFactory.createHealingPotion("hp potion", 1, "a blue sword", null, 10);
@@ -123,13 +121,15 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
     public EscortAdventure(List<Realm> realms,
                            List<Entity> entities,
                            GetToTargetXYWithPrincessCondition condition,
-                           List<User> players)
+                           List<User> players,
+                           List<PlayableCharacter> playerCharacters)
     {
         super(  realms,
                 entities,
                 List.of(condition),
                 players  );
         this.condition=condition;
+        this.playableCharacters=playerCharacters;
         gridState = new TerminalGrid(6, 6);
     }
 
@@ -160,14 +160,15 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
     }
 
     /**
-     * Accepts input and acts for player 1 and player 2
+     * Accepts input and acts for all players
      * Can perform actions specific to each player's class.
      */
     public void playerTurns() {
-        PartyStatsUI partyStats = new PartyStatsUI(player1, player2);
+        PartyStatsUI partyStats = new PartyStatsUI(playableCharacters);
 
         boolean done = false;
-        currentPlayer = player1;
+        int i = 0;
+        currentPlayer = playableCharacters.get(i);
         while (!done) {
             Status temp = acceptInput();
             String input = temp.getMsg();
@@ -182,10 +183,11 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
             partyStats.display();
 
             gridState.render();
-            if (currentPlayer == player1)
-                currentPlayer = player2;
+            if (i==playableCharacters.size()-1){
+                done=true;
+            }
             else
-                done = true;
+                currentPlayer=playableCharacters.get(++i);
         }
         // if (player location is within 2 spaces of the destination) {
         // // give clear hints about the destination (ex: steps)
@@ -308,7 +310,7 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
                 !(attackTarget.getContent().get(0) instanceof Hostile)) {
             return new Status(Status.Option.FAIL, "Cannot attack that cell");
         }
-        GridCell targetCell = cellAdjacent(p, direction);
+        GridCell targetCell = gridState.cellAdjacent(p, direction);
 
         p.attack(targetCell.getContent().get(0)); // assume only on 1st layer
         if (targetCell.getContent().get(0) instanceof Goblin g) {
@@ -357,19 +359,6 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
     }
 
     /**
-     * Get the coordinates for the GridCell in the cardinal direction (nswe) adjacent.
-     *
-     * @param entity    the
-     * @param direction the cardinal direction
-     * @return the adjacent grid cell
-     */
-    public GridCell cellAdjacent(Entity entity, char direction){
-        int[] target = gridState.getLocationCords(gridState.getLocation(entity));
-        TerminalGrid.moveCordInDirection(target, direction);
-        return gridState.getCell(target[0], target[1]);
-    }
-
-    /**
      * Initialize grid with the information given
      */
     public void initializeGrid() {
@@ -407,8 +396,9 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
         }
 
 //        gridState.setCell(0, 0, princess_npc);
-        gridState.setCell(0, 1, player1);
-        gridState.setCell(0, 2, player2);
+        for (int j = 1; j < playableCharacters.size()+1; ++j){
+            gridState.setCell(0, j, playableCharacters.get(j-1));
+        }
 
         gridState.initializeGrid(enemies);
 //        gridState.initializeGrid(items);
@@ -427,29 +417,11 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
      * Initialize user to be either Assassin or Cleric
      */
     public void initializeUser() {
-        String p1Name = (players != null && !players.isEmpty()) ? players.get(0).getUsername() : "Player 1";
-        String p2Name = (players != null && players.size() > 1) ? players.get(1).getUsername() : "Player 2";
 
-        int p1Choice = page.acceptIntUntil(
-                p1Name + ", would you like to be an Assassin, or a Cleric?\n"
-                + "0 - Assassin\n"
-                + "1 - Cleric\n", 1);
-        Cleric c = Cleric.getInstance(new Name(p1Choice == 1 ? p1Name : p2Name));
-        Assassin a = Assassin.getInstance(new Name(p1Choice == 0 ? p1Name : p2Name));
-        if (p1Choice == 1) {
-            player1 = c;
-            player2 = a;
-            page.print(p1Name + " is the Cleric, " + p2Name + " is the Assassin\n");
-        } else {
-            player1 = a;
-            player2 = c;
-            page.print(p1Name + " is the Assassin, " + p2Name + " is the Cleric\n");
-        }
-
-        PartyStatsUI partyStats = new PartyStatsUI(player1, player2);
+        PartyStatsUI partyStats = new PartyStatsUI(playableCharacters);
         partyStats.display();
 
-        currentPlayer = player1;
+        currentPlayer = playableCharacters.get(0);
 
     }
 
@@ -465,7 +437,7 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
             return new Status(Status.Option.FAIL, "Cannot move in that direction");
         }
 
-        GridCell targetCell = cellAdjacent(p, direction);
+        GridCell targetCell = gridState.cellAdjacent(p, direction);
 
         gridState.removeEntity(p);
         if (targetCell.hasContent()) {
@@ -503,7 +475,7 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
         // logic to let the player ask for hints
 
         // check the distance between the player with the NPC and the destination
-        int[] playerPosition = gridState.getLocationCords(player1);
+        int[] playerPosition = gridState.getLocationCords(currentPlayer);
         if (gridState.checkDistance(playerPosition[0], playerPosition[1], 2)) {
             // give clear hints about the destination (ex: steps)
             // tell drirection
@@ -530,7 +502,7 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
                 return new Status(Status.Option.DONE, wc.winMessage().toString());
             }
         }
-        if (player1.isDead() || player2.isDead()) {
+        if (playableCharacters.stream().anyMatch(PlayableCharacter::isDead)) {
             return new Status(Status.Option.DONE, "You died! You lost.");
         } else
             return new Status(Status.Option.CONTINUE);
@@ -543,11 +515,18 @@ public class EscortAdventure extends MiniAdventure { // extends MiniAdventure {
      */
     public static void main(String[] args) {
 
+        List<User> users= List.of(
+                User.getNewRandomUser(),
+                User.getNewRandomUser(),
+                User.getNewRandomUser()
+        );
         EscortAdventure adventure = new EscortAdventure(
                 new ArrayList<>(),
                 defaultEntities(),
                 new GetToTargetXYWithPrincessCondition(4, 4),
-                new ArrayList<>());
+                users,
+                queryForClasses(users)
+                );
 
         adventure.play();
     }

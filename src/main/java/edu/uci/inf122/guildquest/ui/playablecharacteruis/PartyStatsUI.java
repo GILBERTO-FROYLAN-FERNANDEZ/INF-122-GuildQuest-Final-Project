@@ -15,8 +15,8 @@ public class PartyStatsUI {
     private final List<PlayableCharacter> characters;
 
     public PartyStatsUI(List<PlayableCharacter> characters) {
-        if (characters == null || characters.isEmpty() || characters.size() > 2) {
-            throw new IllegalArgumentException("Party must contain 1 or 2 characters.");
+        if (characters == null || characters.isEmpty() || characters.size() < 2) {
+            throw new IllegalArgumentException("Party must contain 1 more than 1 character");
         }
         this.characters = characters;
     }

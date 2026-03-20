@@ -79,11 +79,14 @@ public class AdventureUI {
                 "Escort Realm", "A dangerous escort mission",
                 new TimeRule(0, 1.0), 6, 6);
 
+        List<PlayableCharacter> characters = MiniAdventure.queryForClasses(players);
         EscortAdventure adventure = new EscortAdventure(
                 List.of(realm),
                 EscortAdventure.defaultEntities(),
                 new GetToTargetXYWithPrincessCondition(4,4),
-                players);
+                players,
+                characters
+                );
 
         page.nextScreen();
         adventure.play();
