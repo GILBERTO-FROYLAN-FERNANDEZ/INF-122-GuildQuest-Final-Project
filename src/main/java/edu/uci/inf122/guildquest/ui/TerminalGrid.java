@@ -3,6 +3,7 @@ package edu.uci.inf122.guildquest.ui;
 import edu.uci.inf122.guildquest.api.Status;
 import edu.uci.inf122.guildquest.api.state.GridCell;
 import edu.uci.inf122.guildquest.api.state.GridState;
+import edu.uci.inf122.guildquest.entities.Entity;
 import edu.uci.inf122.guildquest.entities.playablecharacters.Move;
 import edu.uci.inf122.guildquest.entities.playablecharacters.PlayableCharacter;
 
@@ -53,8 +54,9 @@ public class TerminalGrid extends GridState {
                         .append(" |");
             }
             res.append('\n');
+            res.append(("|"+"-".repeat((longestNameLen+2))+"|").repeat(grid.size())).append('\n');
         }
-        res.append("-".repeat((longestNameLen+4)*grid.size())).append('\n');
+//        res.append("-".repeat((longestNameLen+4)*grid.size())).append('\n');
         return res.toString();
     }
 
@@ -91,6 +93,18 @@ public class TerminalGrid extends GridState {
             case 'n' -> target[0] -= 1;
             default -> throw new IllegalStateException("Unexpected direction: " + direction);
         }
+    }
+    /**
+     * Get the coordinates for the GridCell in the cardinal direction (nswe) adjacent.
+     *
+     * @param entity    the
+     * @param direction the cardinal direction
+     * @return the adjacent grid cell
+     */
+    public GridCell cellAdjacent(Entity entity, char direction){
+        int[] target = getLocationCords(getLocation(entity));
+        TerminalGrid.moveCordInDirection(target, direction);
+        return getCell(target[0], target[1]);
     }
 
 
