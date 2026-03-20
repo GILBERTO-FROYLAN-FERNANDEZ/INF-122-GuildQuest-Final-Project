@@ -1,8 +1,10 @@
 package edu.uci.inf122.guildquest.content;
 
+import java.io.SequenceInputStream;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class User extends GameContent {
     private UUID userID;
@@ -11,6 +13,7 @@ public class User extends GameContent {
     // private Settings userSetting;
     private List<GameCharacter> characters;
     private List<Campaign> campaigns;
+    private static final AtomicInteger seq = new AtomicInteger();
     // private Time userTime;
 
     // constructor:
@@ -20,6 +23,10 @@ public class User extends GameContent {
         currentRealmID = realmID;
         characters = new ArrayList<>();
         campaigns = new ArrayList<>();
+    }
+
+    public static User getNewRandomUser(){
+        return new User(UUID.randomUUID(), "random "+seq.incrementAndGet(), UUID.randomUUID());
     }
 
     // check name
