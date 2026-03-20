@@ -5,6 +5,12 @@ import edu.uci.inf122.guildquest.entities.playablecharacters.PlayableCharacter;
 
 public class GetToTargetXYWithPrincessCondition extends GetToTargetXYCondition{
 
+    /**
+     * Win condition constructor, accepts the destination coordinates
+     *
+     * @param x the target x
+     * @param y the target y
+     */
     public GetToTargetXYWithPrincessCondition(int x, int y) {
         super(x, y);
     }

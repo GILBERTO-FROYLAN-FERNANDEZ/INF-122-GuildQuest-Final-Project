@@ -35,4 +35,12 @@ public class XYPlace extends Place{
         }
         return vertical.isEmpty() ? horizontal : vertical;
     }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
 }

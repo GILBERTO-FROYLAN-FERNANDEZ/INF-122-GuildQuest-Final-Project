@@ -1,7 +1,7 @@
 package edu.uci.inf122.guildquest.entities.domain_primitives;
 
-public class Amount {
-    private final int count;
+public class Amount implements Comparable<Amount>, Cloneable{
+    protected final int count;
     public Amount(int c){
         if (c<0){
             throw new IllegalArgumentException("Cannot have negative amount");
@@ -32,5 +32,9 @@ public class Amount {
     @Override
     public String toString() {
         return Integer.toString(count);
+    }
+    @Override
+    public int compareTo(Amount o) {
+        return Integer.compare(count, o.count);
     }
 }
