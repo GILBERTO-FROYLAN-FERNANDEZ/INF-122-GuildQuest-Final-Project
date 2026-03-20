@@ -1,8 +1,10 @@
 package edu.uci.inf122.guildquest.ui;
 
+import edu.uci.inf122.guildquest.api.Status;
 import edu.uci.inf122.guildquest.api.state.GridCell;
 import edu.uci.inf122.guildquest.api.state.GridState;
 import edu.uci.inf122.guildquest.entities.playablecharacters.Move;
+import edu.uci.inf122.guildquest.entities.playablecharacters.PlayableCharacter;
 
 import java.util.List;
 
@@ -18,6 +20,7 @@ public class TerminalGrid extends GridState {
     public void render() {
         out.print(getGridStr());
     }
+
     public String getGridStr(){
         int longestNameLen=0;
         for (List<GridCell> row : grid){
@@ -60,36 +63,35 @@ public class TerminalGrid extends GridState {
 
     }
 
-    public static String toOptions(List<Move.ValidMoves> moves) {
-        StringBuilder res = new StringBuilder();
-        for (Move.ValidMoves m : moves){
-            switch (m){
-                case ATTACK -> res.append("Attack: North (n), South (s), East (e), West (w)\n");
-                case TRAVEL -> res.append("Move: North (n), South (s), East (e), West (w)\n");
-                case HEAL_OTHER -> res.append("Heal other: North (n), South (s), East (e), West (w)\n");
-                case HEAL_SELF -> res.append("Heal self: (heal self)\n");
-                case TAKE_ITEM -> res.append("Take Item: North (n), South (s), East (e), West (w)\n");
-                case USE_ITEM -> res.append("Use Item: (use item)\n");
-                case REQUEST_HINT -> res.append("Request Hint: (r)\n");
-            }
-        }
-        return res.toString();
+    /**
+     * Takes valid moves and accepts input until one is chosen.
+     *
+     * @param pc the pc
+     * @return the status
+     */
+    public static Status acceptPlayerInput(PlayableCharacter pc) {
+        List<Move.ValidMoves> moves = pc.getMoves();
+        String moveString = Move.toOptionsStr(moves);
+        String moveRegex = Move.toOptionsRegexStr(moves);
+        String input = Page.getPage().acceptStrUntil(pc.getName() + "'s turn!\n" + moveString, moveRegex);
+        return new Status(Status.Option.SUCCESS, input);
     }
-    public static String toOptionsRegex(List<Move.ValidMoves> moves) {
-        StringBuilder res = new StringBuilder();
-        for (Move.ValidMoves m : moves){
-            switch (m){
-                case ATTACK -> res.append("(attack [nsew])");
-                case TRAVEL -> res.append("(move [nsew])");
-                case HEAL_OTHER -> res.append("(heal [nsew])");
-                case HEAL_SELF -> res.append("(heal self)");
-                case TAKE_ITEM -> res.append("(take item [nsew])");
-                case USE_ITEM -> res.append("(use item)");
-                case REQUEST_HINT -> res.append("(r)");
-            }
-            res.append('|');
+
+    /**
+     * Update the target arr to be 1 adjacent in the direction specified.
+     *
+     * @param target    the target
+     * @param direction the direction
+     */
+    public static void moveCordInDirection(int[] target, char direction){
+        switch (direction) {
+            case 'e' -> target[1] += 1;
+            case 'w' -> target[1] -= 1;
+            case 's' -> target[0] += 1;
+            case 'n' -> target[0] -= 1;
+            default -> throw new IllegalStateException("Unexpected direction: " + direction);
         }
-        res.deleteCharAt(res.length()-1);
-        return res.toString();
     }
+
+
 }
