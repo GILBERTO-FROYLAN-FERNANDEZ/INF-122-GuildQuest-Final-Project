@@ -8,17 +8,20 @@ import edu.uci.inf122.guildquest.ui.playablecharacteruis.ClericUI;
 import edu.uci.inf122.guildquest.ui.playablecharacteruis.KnightUI;
 import edu.uci.inf122.guildquest.ui.playablecharacteruis.PlayableCharacterUI;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Cleric extends PlayableCharacter implements CanHealSelf, CanHealOther {
     private static Cleric instance;
     private final DecimalAmount healingPower;
 
-    private static final List<Move.ValidMoves> moves = List.of(Move.ValidMoves.TRAVEL, Move.ValidMoves.HEAL_OTHER,
-        Move.ValidMoves.HEAL_SELF,
-        Move.ValidMoves.USE_ITEM,
-        Move.ValidMoves.REQUEST_HINT
-    );
+    private static final List<Move.ValidMoves> moves;
+    static {
+        ArrayList<Move.ValidMoves> temp = new ArrayList<>(defaultMoves());
+        temp.add(1, Move.ValidMoves.HEAL_SELF);
+        temp.add(1, Move.ValidMoves.HEAL_OTHER);
+        moves=List.copyOf(temp);
+    }
 
     protected Cleric(Name name) {
         super(name, new Health(90), new Level(1), new CharacterClass("Cleric"));

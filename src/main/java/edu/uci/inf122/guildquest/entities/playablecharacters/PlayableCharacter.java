@@ -15,7 +15,14 @@ public abstract class PlayableCharacter extends Entity implements HasHealth {
     private final Level level;
     private final CharacterClass characterClass;
     private final Inventory inventory;
-    private static final List<Move.ValidMoves> moves = List.of();
+    private static final List<Move.ValidMoves> moves = List.of(
+            Move.ValidMoves.TRAVEL,
+            Move.ValidMoves.USE_ITEM,
+            Move.ValidMoves.REQUEST_HINT,
+            Move.ValidMoves.SKIP
+            );
+
+
 
     private WithPrincess withPrincess;
 
@@ -106,5 +113,8 @@ public abstract class PlayableCharacter extends Entity implements HasHealth {
     }
 
     public abstract PlayableCharacterUI getUI();
+    public static List<Move.ValidMoves> defaultMoves() {
+        return moves;
+    }
 
 }
